@@ -10,27 +10,27 @@ export default function RandomnessTestingPage() {
       {/* Header */}
       <header className="bg-white border-b-4 border-black sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-          <div className="flex flex-col lg:flex-row items-center justify-between space-y-4 lg:space-y-0">
+          <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
             <div className="text-center lg:text-left">
               <Link href="/" className="hover:opacity-80 transition-opacity">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-black tracking-tight">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black text-black tracking-tight">
                   DCIPHER
                 </h1>
-                <p className="text-base sm:text-lg text-[#666666] font-bold mt-1">
+                <p className="text-sm sm:text-base lg:text-lg text-[#666666] font-bold mt-1">
                   RANDOMNESS TESTING & VERIFICATION
                 </p>
               </Link>
             </div>
             
-            <div className="flex items-center space-x-6">
-              <nav className="flex items-center space-x-4">
-                <Link href="/" className="text-sm text-black font-bold hover:text-[#ff006e] transition-colors">
+            <div className="flex flex-col items-center space-y-4 lg:flex-row lg:items-center lg:space-y-0 lg:space-x-6">
+              <nav className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 lg:gap-6">
+                <Link href="/" className="text-sm text-black font-bold hover:text-[#ff006e] transition-colors px-2 py-1">
                   HOME
                 </Link>
-                <Link href="/verification" className="text-sm text-black font-bold hover:text-[#ff006e] transition-colors">
+                <Link href="/verification" className="text-sm text-black font-bold hover:text-[#ff006e] transition-colors px-2 py-1">
                   VERIFICATION
                 </Link>
-                <Link href="/contract-status" className="text-sm text-black font-bold hover:text-[#00d4ff] transition-colors">
+                <Link href="/contract-status" className="text-sm text-black font-bold hover:text-[#00d4ff] transition-colors px-2 py-1">
                   CONTRACT STATUS
                 </Link>
               </nav>

@@ -15,6 +15,7 @@
   --card-bg: #ffffff;
   --text-primary: #000000;
   --text-secondary: #666666;
+  --text-muted: #888888;
   
   /* Neo-Brutalism Typography */
   --font-display: 'Courier New', monospace;
@@ -55,6 +56,7 @@
   --color-card-bg: var(--card-bg);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
   --font-sans: var(--font-body);
   --font-mono: var(--font-mono);
 }
@@ -66,6 +68,7 @@
     --card-bg: #111111;
     --text-primary: #ffffff;
     --text-secondary: #cccccc;
+    --text-muted: #aaaaaa;
     --muted: #1a1a1a;
   }
 }
@@ -341,4 +344,92 @@ p {
 .text-success { color: var(--success); }
 .text-error { color: var(--error); }
 .text-warning { color: var(--warning); }
-.text-muted { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+
+/* Enhanced Text Readability */
+.text-readable {
+  color: var(--text-primary);
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.text-readable-secondary {
+  color: var(--text-secondary);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.text-readable-muted {
+  color: var(--text-muted);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Enhanced Button Contrast */
+.btn-high-contrast {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  font-weight: 900;
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+}
+
+.btn-high-contrast:hover {
+  background: #e6005a;
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Enhanced Form Elements */
+.form-input-enhanced {
+  background: white;
+  color: var(--text-primary);
+  border: 3px solid var(--border);
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.form-input-enhanced:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+  transform: translate(-1px, -1px);
+}
+
+/* Enhanced Status Indicators */
+.status-success {
+  background: var(--success);
+  color: var(--text-primary);
+  border: 3px solid var(--border);
+  padding: 8px 16px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.status-warning {
+  background: var(--warning);
+  color: var(--text-primary);
+  border: 3px solid var(--border);
+  padding: 8px 16px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.status-error {
+  background: var(--error);
+  color: white;
+  border: 3px solid var(--border);
+  padding: 8px 16px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.status-info {
+  background: var(--secondary);
+  color: var(--text-primary);
+  border: 3px solid var(--border);
+  padding: 8px 16px;
+  font-weight: 900;
+  text-transform: uppercase;
+}

@@ -12,16 +12,16 @@ export function WalletConnect() {
   })
 
   return (
-    <div className="flex flex-col lg:flex-row items-center space-y-2 lg:space-y-0 lg:space-x-3">
+    <div className="flex flex-col items-center space-y-3 lg:flex-row lg:items-center lg:space-y-0 lg:space-x-3">
       {/* Wallet Info Display */}
       {isConnected && address && (
-        <div className="flex items-center space-x-3 bg-white border-2 border-black px-3 py-2 rounded-lg shadow-sm">
+        <div className="flex items-center space-x-3 bg-white border-2 border-black px-3 py-2 rounded-lg shadow-sm w-full lg:w-auto justify-center lg:justify-start">
           <div className="flex items-center space-x-2">
             {/* Status Indicator */}
             <div className="w-2 h-2 bg-[#06ffa5] rounded-full border border-black"></div>
             
             {/* Address and Balance */}
-            <div className="text-xs lg:text-sm">
+            <div className="text-xs lg:text-sm text-center lg:text-left">
               <div className="font-bold text-black">
                 {address.slice(0, 6)}...{address.slice(-4)}
               </div>
@@ -35,7 +35,7 @@ export function WalletConnect() {
       
       {/* Connect Button - Custom Styling */}
       <div className="w-full lg:w-auto">
-        <div className="[&_.rainbow-kit-connect-button]:!bg-[#ff006e] [&_.rainbow-kit-connect-button]:!text-white [&_.rainbow-kit-connect-button]:!font-bold [&_.rainbow-kit-connect-button]:!border-2 [&_.rainbow-kit-connect-button]:!border-black [&_.rainbow-kit-connect-button]:hover:!bg-[#e6005a] [&_.rainbow-kit-connect-button]:!transition-colors [&_.rainbow-kit-connect-button]:!duration-200 [&_.rainbow-kit-connect-button]:!rounded-lg [&_.rainbow-kit-connect-button]:!px-4 [&_.rainbow-kit-connect-button]:!py-2 [&_.rainbow-kit-connect-button]:!text-sm [&_.rainbow-kit-connect-button]:lg:!text-base">
+        <div className="[&_.rainbow-kit-connect-button]:!bg-[#ff006e] [&_.rainbow-kit-connect-button]:!text-white [&_.rainbow-kit-connect-button]:!font-bold [&_.rainbow-kit-connect-button]:!border-2 [&_.rainbow-kit-connect-button]:!border-black [&_.rainbow-kit-connect-button]:hover:!bg-[#e6005a] [&_.rainbow-kit-connect-button]:!transition-colors [&_.rainbow-kit-connect-button]:!duration-200 [&_.rainbow-kit-connect-button]:!rounded-lg [&_.rainbow-kit-connect-button]:!px-4 [&_.rainbow-kit-connect-button]:!py-2 [&_.rainbow-kit-connect-button]:!text-sm [&_.rainbow-kit-connect-button]:lg:!text-base [&_.rainbow-kit-connect-button]:!w-full [&_.rainbow-kit-connect-button]:lg:!w-auto [&_.rainbow-kit-connect-button]:!justify-center">
           <ConnectButton
             chainStatus="icon"
             showBalance={false}

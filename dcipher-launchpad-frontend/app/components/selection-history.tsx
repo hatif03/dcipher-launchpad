@@ -1,20 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-
-interface SelectionResult {
-  id: string
-  participants: string[]
-  winnerCount: number
-  winners: string[]
-  timestamp: Date
-  transactionHash?: string
-  randomness?: string
-  status?: 'pending' | 'completed' | 'cancelled'
-  requestId?: string
-  completedAt?: Date
-  cancelledAt?: Date
-}
+import { SelectionResult } from '../types/selection'
 
 interface SelectionHistoryProps {
   selections: SelectionResult[]
@@ -79,6 +66,20 @@ export function SelectionHistory({ selections }: SelectionHistoryProps) {
                       </span>
                     </div>
                   )}
+                  {/* Transaction Hash Status */}
+                  {selection.transactionHash ? (
+                    <div className="mt-2">
+                      <span className="inline-block px-2 py-1 text-xs font-black bg-green-100 text-green-800 border border-green-300 rounded">
+                        ✅ TX Confirmed
+                      </span>
+                    </div>
+                  ) : selection.status === 'pending' && (
+                    <div className="mt-2">
+                      <span className="inline-block px-2 py-1 text-xs font-black bg-yellow-100 text-yellow-800 border border-yellow-300 rounded">
+                        ⏳ Waiting for TX
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -86,6 +87,15 @@ export function SelectionHistory({ selections }: SelectionHistoryProps) {
                 <span className="text-[#666666] text-lg font-black">
                   {formatTimestamp(selection.timestamp)}
                 </span>
+                {/* Show transaction hash if available */}
+                {selection.transactionHash && (
+                  <div className="text-xs">
+                    <span className="text-green-600 font-bold">TX:</span>
+                    <code className="ml-1 text-green-600 font-mono">
+                      {selection.transactionHash.slice(0, 8)}...{selection.transactionHash.slice(-6)}
+                    </code>
+                  </div>
+                )}
                 <svg 
                   className={`w-8 h-8 text-black transition-transform ${
                     expandedSelection === selection.id ? 'rotate-180' : ''
@@ -103,6 +113,31 @@ export function SelectionHistory({ selections }: SelectionHistoryProps) {
           {/* Expanded Content */}
           {expandedSelection === selection.id && (
             <div className="border-t-4 border-black p-6 space-y-8">
+              {/* Transaction Status Summary */}
+              <div className="bg-gray-50 border-2 border-gray-300 p-4 rounded">
+                <h6 className="text-black font-black text-lg mb-3 uppercase tracking-wide">Transaction Status</h6>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <strong>Status:</strong> 
+                    <span className={`ml-2 px-2 py-1 text-xs font-black uppercase ${
+                      selection.status === 'completed' ? 'bg-[#06ffa5] text-black' :
+                      selection.status === 'pending' ? 'bg-[#ffbe0b] text-black' :
+                      'bg-[#ff006e] text-white'
+                    } border border-black rounded`}>
+                      {selection.status || 'unknown'}
+                    </span>
+                  </div>
+                  <div>
+                    <strong>Transaction Hash:</strong>
+                    {selection.transactionHash ? (
+                      <span className="ml-2 text-green-600 font-mono text-sm">✅ Confirmed</span>
+                    ) : (
+                      <span className="ml-2 text-yellow-600 font-mono text-sm">⏳ Pending</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Winners List */}
               <div>
                 <h6 className="text-black font-black text-xl mb-4 uppercase tracking-wide">Selected Winners</h6>
@@ -149,7 +184,13 @@ export function SelectionHistory({ selections }: SelectionHistoryProps) {
                 <div>
                   <h6 className="text-black font-black text-lg mb-3 uppercase tracking-wide">Transaction Hash</h6>
                   <div className="bg-yellow-100 border-4 border-yellow-400 p-4 text-yellow-800 font-black">
-                    ⏳ Waiting for transaction hash... This will be populated when the transaction completes.
+                    ⏳ Waiting for transaction hash... 
+                    <div className="mt-2 text-sm">
+                      The transaction hash will appear here once your selection request is confirmed on the blockchain. 
+                      This typically happens within 10-30 seconds after you submit the selection.
+                      <br /><br />
+                      <strong>Status:</strong> {selection.status === 'pending' ? 'Processing selection request...' : 'Unknown'}
+                    </div>
                   </div>
                 </div>
               )}
@@ -216,7 +257,7 @@ export function SelectionHistory({ selections }: SelectionHistoryProps) {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                {selection.transactionHash && (
+                {selection.transactionHash ? (
                   <a
                     href={`https://sepolia.basescan.org/tx/${selection.transactionHash}`}
                     target="_blank"
@@ -225,11 +266,19 @@ export function SelectionHistory({ selections }: SelectionHistoryProps) {
                   >
                     VIEW ON BASESCAN
                   </a>
+                ) : (
+                  <button
+                    disabled
+                    className="px-6 py-3 bg-gray-400 text-gray-600 font-black text-lg border-4 border-gray-300 cursor-not-allowed text-center"
+                    title="Transaction hash not available yet"
+                  >
+                    WAITING FOR TX HASH
+                  </button>
                 )}
                 
                 <button
                   onClick={() => {
-                    const text = `Selection ID: ${selection.id}\nWinners: ${selection.winners.join(', ')}\nTransaction: ${selection.transactionHash}\nRandomness: ${selection.randomness}`
+                    const text = `Selection ID: ${selection.id}\nWinners: ${selection.winners.join(', ')}\nTransaction: ${selection.transactionHash || 'Pending'}\nRandomness: ${selection.randomness || 'Pending'}`
                     copyToClipboard(text)
                   }}
                   className="px-6 py-3 bg-[#ffbe0b] text-black font-black text-lg border-4 border-black hover:bg-[#ffbe0b]/90 transition-colors text-center"
@@ -237,6 +286,11 @@ export function SelectionHistory({ selections }: SelectionHistoryProps) {
                   COPY RESULTS
                 </button>
               </div>
+              {!selection.transactionHash && (
+                <div className="text-sm text-gray-600 text-center">
+                  🔍 Once the transaction hash appears, you can verify your selection on the blockchain
+                </div>
+              )}
             </div>
           )}
         </div>

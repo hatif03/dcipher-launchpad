@@ -156,7 +156,7 @@ export class BlockchainService {
       return {
         requestId: result.requestID.toString(),
         status: 'fulfilled',
-        randomness: result.randomness,
+        randomness: result.randomness ? `0x${Buffer.from(result.randomness).toString('hex')}` : undefined,
         error: undefined
       }
     } catch (error) {

@@ -4,13 +4,16 @@ import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAcc
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../config'
 import { parseEther, formatEther, getAddress } from 'viem'
+import { useEffect, useCallback } from 'react'
+import { usePublicClient } from 'wagmi'
 
 export function useContract() {
   const queryClient = useQueryClient()
   const { address: userAddress } = useAccount()
+  const publicClient = usePublicClient()
 
-  // Read contract state
-  const { data: nextSelectionId } = useReadContract({
+  // Read contract state with error handling
+  const { data: nextSelectionId, error: nextSelectionIdError } = useReadContract({
     address: CONTRACT_ADDRESS as `0x${string}`,
     abi: CONTRACT_ABI,
     functionName: 'nextSelectionId',
@@ -61,6 +64,176 @@ export function useContract() {
   const { isLoading: isToppingUpTx } = useWaitForTransactionReceipt({
     hash: topUpSubscriptionHash,
   })
+
+  // Event listening for randomness callbacks with robust error handling
+  const listenForRandomnessCallbacks = useCallback(() => {
+    if (!publicClient || !CONTRACT_ADDRESS) return
+
+    let unwatchSelectionCompleted: (() => void) | undefined
+    let unwatchSelectionRequested: (() => void) | undefined
+    let retryTimeout: NodeJS.Timeout | undefined
+
+    const setupEventListeners = () => {
+      try {
+        console.log('Setting up event listeners for randomness callbacks...')
+        
+        // Listen for SelectionCompleted events (randomness received)
+        unwatchSelectionCompleted = publicClient.watchContractEvent({
+          address: CONTRACT_ADDRESS as `0x${string}`,
+          abi: CONTRACT_ABI,
+          eventName: 'SelectionCompleted',
+          onLogs: (logs) => {
+            console.log('🎲 SelectionCompleted event received:', logs)
+            logs.forEach((log) => {
+              // Type assertion for the decoded log
+              const decodedLog = log as any
+              if (decodedLog.args) {
+                const { selectionId, requester, winners, requestId, randomness } = decodedLog.args
+                
+                if (selectionId && winners && randomness) {
+                  console.log(`🎯 Randomness received for selection ${selectionId}:`, {
+                    winners: winners.length,
+                    randomness: randomness,
+                    requestId: requestId
+                  })
+                  
+                  // Invalidate queries to refresh the UI
+                  queryClient.invalidateQueries({ queryKey: ['selection', selectionId.toString()] })
+                  queryClient.invalidateQueries({ queryKey: ['selections'] })
+                  
+                  // Show success notification
+                  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                    new Notification('🎲 Randomness Received!', {
+                      body: `Winners selected for selection #${selectionId}`,
+                      icon: '/favicon.ico'
+                    })
+                  }
+                }
+              }
+            })
+          },
+          onError: (error) => {
+            console.error('Error listening for SelectionCompleted events:', error)
+            // Attempt to recreate the listener after a delay
+            scheduleReconnect()
+          }
+        })
+
+        // Listen for SelectionRequested events
+        unwatchSelectionRequested = publicClient.watchContractEvent({
+          address: CONTRACT_ADDRESS as `0x${string}`,
+          abi: CONTRACT_ABI,
+          eventName: 'SelectionRequested',
+          onLogs: (logs) => {
+            console.log('📝 SelectionRequested event received:', logs)
+            logs.forEach((log) => {
+              // Type assertion for the decoded log
+              const decodedLog = log as any
+              if (decodedLog.args) {
+                const { selectionId, requester, participantCount, winnerCount, requestId } = decodedLog.args
+                
+                if (selectionId && requestId) {
+                  console.log(`📋 Selection ${selectionId} requested with request ID ${requestId}`)
+                  
+                  // Invalidate queries to refresh the UI
+                  queryClient.invalidateQueries({ queryKey: ['selection', selectionId.toString()] })
+                  queryClient.invalidateQueries({ queryKey: ['selections'] })
+                }
+              }
+            })
+          },
+          onError: (error) => {
+            console.error('Error listening for SelectionRequested events:', error)
+            // Attempt to recreate the listener after a delay
+            scheduleReconnect()
+          }
+        })
+      } catch (error) {
+        console.error('Failed to set up event listeners:', error)
+        scheduleReconnect()
+      }
+    }
+
+    const scheduleReconnect = () => {
+      if (retryTimeout) {
+        clearTimeout(retryTimeout)
+      }
+      
+      retryTimeout = setTimeout(() => {
+        console.log('Attempting to reconnect event listeners...')
+        cleanup()
+        setupEventListeners()
+      }, 5000) // Wait 5 seconds before retrying
+    }
+
+    const cleanup = () => {
+      if (unwatchSelectionCompleted) {
+        try {
+          unwatchSelectionCompleted()
+        } catch (error) {
+          console.error('Error cleaning up SelectionCompleted listener:', error)
+        }
+        unwatchSelectionCompleted = undefined
+      }
+      
+      if (unwatchSelectionRequested) {
+        try {
+          unwatchSelectionRequested()
+        } catch (error) {
+          console.error('Error cleaning up SelectionRequested listener:', error)
+        }
+        unwatchSelectionRequested = undefined
+      }
+      
+      if (retryTimeout) {
+        clearTimeout(retryTimeout)
+        retryTimeout = undefined
+      }
+    }
+
+    // Initial setup
+    setupEventListeners()
+
+    // Return cleanup function
+    return cleanup
+  }, [publicClient, queryClient])
+
+  // Set up event listeners when the hook mounts
+  useEffect(() => {
+    // Check if we should use persistent event listening or just polling
+    const usePersistentEvents = process.env.NEXT_PUBLIC_USE_PERSISTENT_EVENTS !== 'false'
+    
+    let cleanup: (() => void) | undefined
+    let pollInterval: NodeJS.Timeout | undefined
+    
+    if (usePersistentEvents) {
+      // Try persistent event listening first
+      cleanup = listenForRandomnessCallbacks()
+    }
+    
+    // Always set up polling as a fallback or primary method
+    pollInterval = setInterval(() => {
+      // This will check for new selections and update the UI
+      if (nextSelectionId && typeof nextSelectionId === 'bigint' && nextSelectionId > BigInt(0)) {
+        // Invalidate queries to refresh the UI periodically
+        queryClient.invalidateQueries({ queryKey: ['selections'] })
+      }
+    }, 10000) // Poll every 10 seconds
+    
+    // Log RPC errors for debugging
+    if (nextSelectionIdError) {
+      console.warn('RPC Error reading nextSelectionId:', nextSelectionIdError)
+      // If we get RPC errors, consider switching to polling-only mode
+      if (usePersistentEvents && nextSelectionIdError.message?.includes('filter not found')) {
+        console.warn('Detected filter error, consider setting NEXT_PUBLIC_USE_PERSISTENT_EVENTS=false')
+      }
+    }
+    
+    return () => {
+      if (cleanup) cleanup()
+      if (pollInterval) clearInterval(pollInterval)
+    }
+  }, [listenForRandomnessCallbacks, nextSelectionId, queryClient, nextSelectionIdError])
 
   // Hook to read selection data from blockchain
   const useSelectionFromBlockchain = (selectionId: bigint | undefined) => {
@@ -126,6 +299,54 @@ export function useContract() {
       refetchIntervalInBackground: true,
     })
   }
+
+  // Function to manually check for randomness updates
+  const checkRandomnessUpdate = useCallback(async (selectionId: bigint) => {
+    if (!publicClient || !CONTRACT_ADDRESS) return null
+    
+    try {
+      console.log(`🔍 Manually checking randomness update for selection ${selectionId}...`)
+      
+      const selection = await publicClient.readContract({
+        address: CONTRACT_ADDRESS as `0x${string}`,
+        abi: CONTRACT_ABI,
+        functionName: 'getSelection',
+        args: [selectionId],
+      })
+      
+      // Type assertion for the selection data
+      const selectionData = selection as {
+        requester: string
+        participants: string[]
+        winnerCount: bigint
+        requestId: bigint
+        isCompleted: boolean
+        isCancelled: boolean
+        winners: string[]
+        randomness: string
+        timestamp: bigint
+      }
+      
+      if (selectionData && selectionData.isCompleted && selectionData.randomness !== '0x') {
+        console.log(`🎯 Randomness found for selection ${selectionId}:`, selectionData.randomness)
+        
+        // Invalidate queries to refresh the UI
+        queryClient.invalidateQueries({ queryKey: ['selection', selectionId.toString()] })
+        queryClient.invalidateQueries({ queryKey: ['selections'] })
+        
+        return {
+          randomness: selectionData.randomness,
+          winners: selectionData.winners,
+          isCompleted: selectionData.isCompleted
+        }
+      }
+      
+      return null
+    } catch (error) {
+      console.error(`Failed to check randomness update for selection ${selectionId}:`, error)
+      return null
+    }
+  }, [publicClient, queryClient])
 
   // Read selection data from smart contract
   const readSelectionFromContract = async (selectionId: bigint) => {
@@ -270,6 +491,9 @@ export function useContract() {
     
     // Hooks
     useSelection,
+    
+    // Randomness functions
+    checkRandomnessUpdate,
     
     // Transaction hashes
     requestSelectionHash: requestSelectionHash,
