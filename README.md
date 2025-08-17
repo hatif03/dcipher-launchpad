@@ -1,4 +1,4 @@
-# DCipher Launchpad
+# Dcipher Launchpad
 
 A provably fair launchpad platform built with Solidity smart contracts and a modern Next.js frontend.
 

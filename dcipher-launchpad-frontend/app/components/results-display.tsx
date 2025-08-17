@@ -8,6 +8,10 @@ interface SelectionResult {
   timestamp: Date
   transactionHash?: string
   randomness?: string
+  status?: 'pending' | 'completed' | 'cancelled'
+  requestId?: string
+  completedAt?: Date
+  cancelledAt?: Date
 }
 
 interface ResultsDisplayProps {
@@ -48,27 +52,33 @@ export function ResultsDisplay({ selection }: ResultsDisplayProps) {
       {/* Winners List */}
       <div className="bg-[#06ffa5] border-4 border-black p-8">
         <h4 className="text-black font-black text-2xl sm:text-3xl mb-6 uppercase tracking-wide">Selected Winners</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {selection.winners.map((winner, index) => (
-            <div key={index} className="bg-white border-4 border-black p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#06ffa5] border-4 border-black flex items-center justify-center text-black font-black text-lg sm:text-xl">
-                    {index + 1}
+        {selection.winners && selection.winners.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {selection.winners.map((winner, index) => (
+              <div key={index} className="bg-white border-4 border-black p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#06ffa5] border-4 border-black flex items-center justify-center text-black font-black text-lg sm:text-xl">
+                      {index + 1}
+                    </div>
+                    <span className="text-black font-mono text-lg sm:text-xl font-black">{formatAddress(winner)}</span>
                   </div>
-                  <span className="text-black font-mono text-lg sm:text-xl font-black">{formatAddress(winner)}</span>
+                  <button
+                    onClick={() => copyToClipboard(winner)}
+                    className="px-4 py-2 bg-[#ffbe0b] text-black font-black text-sm border-4 border-black hover:bg-[#ffbe0b]/90 transition-colors"
+                    title="Copy address"
+                  >
+                    COPY
+                  </button>
                 </div>
-                <button
-                  onClick={() => copyToClipboard(winner)}
-                  className="px-4 py-2 bg-[#ffbe0b] text-black font-black text-sm border-4 border-black hover:bg-[#ffbe0b]/90 transition-colors"
-                  title="Copy address"
-                >
-                  COPY
-                </button>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-yellow-100 border-4 border-yellow-400 p-4 text-yellow-800 font-black">
+            ⏳ Waiting for winners to be selected... This will be populated when the randomness is received and winners are calculated.
+          </div>
+        )}
       </div>
 
       {/* Verification Information */}
@@ -77,7 +87,7 @@ export function ResultsDisplay({ selection }: ResultsDisplayProps) {
         
         <div className="space-y-8">
           {/* Transaction Hash */}
-          {selection.transactionHash && (
+          {selection.transactionHash ? (
             <div>
               <label className="block text-lg font-black text-black mb-4 uppercase tracking-wide">
                 Transaction Hash (On-Chain Proof)
@@ -95,10 +105,19 @@ export function ResultsDisplay({ selection }: ResultsDisplayProps) {
                 </button>
               </div>
             </div>
+          ) : (
+            <div>
+              <label className="block text-lg font-black text-black mb-4 uppercase tracking-wide">
+                Transaction Hash (On-Chain Proof)
+              </label>
+              <div className="bg-yellow-100 border-4 border-yellow-400 p-4 text-yellow-800 font-black">
+                ⏳ Waiting for transaction hash... This will be populated when the transaction completes.
+              </div>
+            </div>
           )}
 
           {/* Randomness Seed */}
-          {selection.randomness && (
+          {selection.randomness && selection.randomness !== '0x' ? (
             <div>
               <label className="block text-lg font-black text-black mb-4 uppercase tracking-wide">
                 Randomness Seed (VRF Output)
@@ -116,6 +135,55 @@ export function ResultsDisplay({ selection }: ResultsDisplayProps) {
                 </button>
               </div>
             </div>
+          ) : (
+            <div>
+              <label className="block text-lg font-black text-black mb-4 uppercase tracking-wide">
+                Randomness Seed (VRF Output)
+              </label>
+              <div className="bg-yellow-100 border-4 border-yellow-400 p-4 text-yellow-800 font-black">
+                ⏳ Waiting for VRF callback from dcipher network... 
+                <div className="mt-2 text-sm">
+                  The smart contract has requested randomness and is waiting for the callback to complete. 
+                  This typically takes 1-2 minutes. The page will automatically update when the randomness arrives.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Request ID */}
+          {selection.requestId ? (
+            <div>
+              <label className="block text-lg font-black text-black mb-4 uppercase tracking-wide">
+                VRF Request ID
+              </label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                <code className="flex-1 bg-white border-4 border-black px-4 py-3 text-black font-mono text-base break-all">
+                  {selection.requestId}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(selection.requestId!)}
+                  className="px-6 py-3 bg-[#06ffa5] text-black font-black text-lg border-4 border-black hover:bg-[#06ffa5]/90 transition-colors whitespace-nowrap"
+                  title="Copy request ID"
+                >
+                  COPY
+                </button>
+              </div>
+              <div className="mt-2 text-sm text-gray-600">
+                This ID tracks your randomness request in the dcipher VRF system
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-lg font-black text-black mb-4 uppercase tracking-wide">
+                VRF Request ID
+              </label>
+              <div className="bg-yellow-100 border-4 border-yellow-400 p-4 text-yellow-800 font-black">
+                ⏳ Waiting for VRF request to be processed... 
+                <div className="mt-2 text-sm">
+                  The request ID will be available once the randomness request is submitted to the VRF network.
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Verification Links */}
@@ -123,12 +191,12 @@ export function ResultsDisplay({ selection }: ResultsDisplayProps) {
             <h5 className="text-xl font-black text-black mb-4 uppercase tracking-wide">Verify Fairness</h5>
             <div className="flex flex-col sm:flex-row gap-4">
               <a
-                href={`https://etherscan.io/tx/${selection.transactionHash}`}
+                href={`https://sepolia.basescan.org/tx/${selection.transactionHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-8 py-4 bg-[#00d4ff] text-black font-black text-lg border-4 border-black hover:bg-[#00d4ff]/90 transition-colors text-center"
               >
-                VIEW ON ETHERSCAN
+                VIEW ON BASESCAN
               </a>
               
               <button
@@ -164,6 +232,16 @@ export function ResultsDisplay({ selection }: ResultsDisplayProps) {
           <div>
             <span className="text-black font-black">Selection Method:</span>
             <span className="text-black ml-3">dcipher VRF</span>
+          </div>
+          {selection.requestId && (
+            <div>
+              <span className="text-black font-black">Request ID:</span>
+              <span className="text-black ml-3 font-mono">{selection.requestId}</span>
+            </div>
+          )}
+          <div>
+            <span className="text-black font-black">Status:</span>
+            <span className="text-black ml-3 font-black uppercase">{selection.status || 'completed'}</span>
           </div>
         </div>
       </div>

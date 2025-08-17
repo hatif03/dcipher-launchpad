@@ -23,8 +23,8 @@ This guide will walk you through deploying your `ProvablyFairLaunchpad` contract
 
 2. Edit `.env` and fill in your values:
    ```bash
-   # Your wallet private key (without 0x prefix)
-   PRIVATE_KEY=your_actual_private_key_here
+   # Your wallet private key (MUST include 0x prefix)
+   PRIVATE_KEY=0xyour_actual_private_key_here
    
    # Base Sepolia RPC URL
    RPC_URL=https://sepolia.base.org
@@ -73,7 +73,7 @@ Once deployed, you can:
 
 ## Important Notes
 
-- **RandomnessSender**: The contract is configured to use the official Base Sepolia RandomnessSender at `0x82Fed730CbdeC5A2D8724F2e3b316a70A565e27e`
+- **RandomnessSender**: The contract is configured to use the official Base Sepolia RandomnessSender at `0xf4e080Db4765C856c0af43e4A8C4e31aA3b48779`
 - **Gas Fees**: Base Sepolia has very low gas fees compared to Ethereum mainnet
 - **Testnet**: This is a testnet, so tokens have no real value
 
@@ -82,7 +82,7 @@ Once deployed, you can:
 ### Common Issues
 
 1. **Insufficient ETH**: Make sure you have enough Base Sepolia ETH for gas
-2. **Private Key Format**: Ensure your private key doesn't include the `0x` prefix
+2. **Private Key Format**: Ensure your private key INCLUDES the `0x` prefix (this is required)
 3. **RPC Issues**: If the default RPC is slow, try alternative providers:
    - Alchemy: `https://base-sepolia.g.alchemy.com/v2/YOUR_API_KEY`
    - Infura: `https://base-sepolia.infura.io/v3/YOUR_API_KEY`

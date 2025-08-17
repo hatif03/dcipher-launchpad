@@ -10,6 +10,10 @@ interface SelectionResult {
   timestamp: Date
   transactionHash?: string
   randomness?: string
+  status?: 'pending' | 'completed' | 'cancelled'
+  requestId?: string
+  completedAt?: Date
+  cancelledAt?: Date
 }
 
 interface SelectionHistoryProps {
@@ -64,6 +68,17 @@ export function SelectionHistory({ selections }: SelectionHistoryProps) {
                   <p className="text-[#666666] text-lg font-black">
                     {selection.participants.length} participants • {selection.winnerCount} winners
                   </p>
+                  {selection.status && (
+                    <div className="mt-2">
+                      <span className={`inline-block px-3 py-1 text-sm font-black uppercase tracking-wide ${
+                        selection.status === 'completed' ? 'bg-[#06ffa5] text-black' :
+                        selection.status === 'pending' ? 'bg-[#ffbe0b] text-black' :
+                        'bg-[#ff006e] text-white'
+                      } border-2 border-black`}>
+                        {selection.status}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -115,7 +130,7 @@ export function SelectionHistory({ selections }: SelectionHistoryProps) {
               </div>
 
               {/* Transaction Details */}
-              {selection.transactionHash && (
+              {selection.transactionHash ? (
                 <div>
                   <h6 className="text-black font-black text-lg mb-3 uppercase tracking-wide">Transaction Hash</h6>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
@@ -130,10 +145,48 @@ export function SelectionHistory({ selections }: SelectionHistoryProps) {
                     </button>
                   </div>
                 </div>
+              ) : (
+                <div>
+                  <h6 className="text-black font-black text-lg mb-3 uppercase tracking-wide">Transaction Hash</h6>
+                  <div className="bg-yellow-100 border-4 border-yellow-400 p-4 text-yellow-800 font-black">
+                    ⏳ Waiting for transaction hash... This will be populated when the transaction completes.
+                  </div>
+                </div>
+              )}
+
+              {/* Request ID */}
+              {selection.requestId ? (
+                <div>
+                  <h6 className="text-black font-black text-lg mb-3 uppercase tracking-wide">VRF Request ID</h6>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                    <code className="flex-1 bg-white border-4 border-black px-4 py-3 text-black font-mono text-base break-all">
+                      {selection.requestId}
+                    </code>
+                    <button
+                      onClick={() => copyToClipboard(selection.requestId!)}
+                      className="px-6 py-3 bg-[#00d4ff] text-black font-black text-lg border-4 border-black hover:bg-[#00d4ff]/90 transition-colors whitespace-nowrap"
+                    >
+                      COPY
+                    </button>
+                  </div>
+                  <div className="mt-2 text-sm text-gray-600">
+                    This ID tracks your randomness request in the dcipher VRF system
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h6 className="text-black font-black text-lg mb-3 uppercase tracking-wide">VRF Request ID</h6>
+                  <div className="bg-yellow-100 border-4 border-yellow-400 p-4 text-yellow-800 font-black">
+                    ⏳ Waiting for VRF request to be processed... 
+                    <div className="mt-2 text-sm">
+                      The request ID will be available once the randomness request is submitted to the VRF network.
+                    </div>
+                  </div>
+                </div>
               )}
 
               {/* Randomness Seed */}
-              {selection.randomness && (
+              {selection.randomness && selection.randomness !== '0x' ? (
                 <div>
                   <h6 className="text-black font-black text-lg mb-3 uppercase tracking-wide">Randomness Seed</h6>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
@@ -148,18 +201,29 @@ export function SelectionHistory({ selections }: SelectionHistoryProps) {
                     </button>
                   </div>
                 </div>
+              ) : (
+                <div>
+                  <h6 className="text-black font-black text-lg mb-3 uppercase tracking-wide">Randomness Seed</h6>
+                  <div className="bg-yellow-100 border-4 border-yellow-400 p-4 text-yellow-800 font-black">
+                    ⏳ Waiting for VRF callback from dcipher network... 
+                    <div className="mt-2 text-sm">
+                      The smart contract has requested randomness and is waiting for the callback to complete. 
+                      This typically takes 1-2 minutes.
+                    </div>
+                  </div>
+                </div>
               )}
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 {selection.transactionHash && (
                   <a
-                    href={`https://etherscan.io/tx/${selection.transactionHash}`}
+                    href={`https://sepolia.basescan.org/tx/${selection.transactionHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-6 py-3 bg-[#00d4ff] text-black font-black text-lg border-4 border-black hover:bg-[#00d4ff]/90 transition-colors text-center"
                   >
-                    VIEW ON ETHERSCAN
+                    VIEW ON BASESCAN
                   </a>
                 )}
                 
